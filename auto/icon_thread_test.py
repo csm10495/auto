@@ -1,6 +1,14 @@
-import auto.icon_thread
-import pytest
 from unittest.mock import MagicMock, patch
+import os
+import pytest
+
+# I've noticed on non Windows systems, a display is required to import pystray..
+# effectively mock out pystray in this case completely.
+if os.name != 'nt':
+    import sys
+    sys.modules['pystray'] = MagicMock()
+
+import auto.icon_thread
 
 IconThread = auto.icon_thread.IconThread
 
