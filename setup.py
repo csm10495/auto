@@ -10,7 +10,7 @@ for line in init_text.read_text().splitlines():
 assert version, 'Could not find __version__!'
 
 setup(
-    name='auto',
+    name='automonic',
     author='csm10495',
     author_email='csm10495@gmail.com',
     url='http://github.com/csm10495/auto',
