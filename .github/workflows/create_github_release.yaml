@@ -5,7 +5,7 @@ jobs:
   test:
     strategy:
       matrix:
-        os: ['windows-latest'] # 'ubuntu-latest', 'macos-latest']
+        os: ['windows-latest', 'ubuntu-latest'] #, 'macos-latest']
     runs-on: ${{ matrix.os }}
     steps:
       - name: Setup Python
@@ -14,6 +14,12 @@ jobs:
           python-version: '3.7.x'
       - name: Get Code
         uses: actions/checkout@v2
+      - name:  Install Linux Specific requirements
+        run: |
+              if [ "$RUNNER_OS" == "Linux" ]; then
+                    sudo apt-get install python3-gi gobject-introspection gir1.2-gtk-3.0 gir1.2-appindicator3-0.1 -y
+              fi
+        shell: bash
       - name: Ensure Module Can Install on Fresh Python
         run: |
           python -m pip install .
