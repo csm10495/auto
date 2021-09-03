@@ -5,7 +5,7 @@ jobs:
   test:
     strategy:
       matrix:
-        os: ['windows-latest', 'ubuntu-latest', 'macos-latest']
+        os: ['windows-latest'] # 'ubuntu-latest', 'macos-latest']
     runs-on: ${{ matrix.os }}
     steps:
       - name: Setup Python
@@ -28,7 +28,7 @@ jobs:
   release:
     if: startsWith(github.ref, 'refs/tags/')
     needs: test
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - name: Create GitHub release
         uses: Roang-zero1/github-create-release-action@master
@@ -38,7 +38,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   pypi:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     needs: release
     steps:
       - name: Get Code
