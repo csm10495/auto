@@ -1,0 +1,24 @@
+auto_config:
+  executor:
+    enable: true
+    execution_directory: null
+    extensions_to_remove_from_pathext:
+    - py
+    - pyw
+    - pyc
+    max_process_runtime_seconds: 3
+    log_directory: null
+    log_level: DEBUG
+    log_max_rotations_to_save: null
+    log_max_size_bytes: null
+    log_format: null
+  watcher:
+    enable: true
+    log_directory: null
+    log_level: DEBUG
+    log_max_rotations_to_save: null
+    log_max_size_bytes: null
+    poll_all_directory: all
+    poll_directory: .
+    poll_seconds: 5
+    log_format: null
