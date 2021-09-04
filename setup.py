@@ -28,5 +28,5 @@ setup(
         'Programming Language :: Python :: 3',
     ],
     include_package_data = True,
-    install_requires=['pystray', 'pytest', 'yaml', 'python-box'],
+    install_requires=['pystray', 'pytest', 'PyYAML', 'python-box'],
 )
