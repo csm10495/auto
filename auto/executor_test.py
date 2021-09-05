@@ -17,7 +17,8 @@ def py_file(tmpdir):
     p = pathlib.Path(tmpdir)
     f = p / f'tmp_{str(uuid.uuid4())}.py'
     f.write_text('print("hello")')
-    f.chmod(f.stat().st_mode | stat.S_IXUSR)
+    if os.name != 'nt':
+        f.chmod(f.stat().st_mode | stat.S_IXUSR)
     yield f.resolve()
 
 @pytest.fixture(scope='function')
