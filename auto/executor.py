@@ -15,6 +15,8 @@ import typing
 
 from auto.config import AutoConfig
 
+PROCESS_LOG_LINE_PREFIX = '>> '
+
 class Executor:
     '''
     An Executor is responsible for executing the given run_path.
@@ -39,39 +41,48 @@ class Executor:
             else:
                 self.run_path = pathlib.Path(which_path)
 
-    def get_process_max_runtime(self) -> int:
+    def get_process_max_runtime_seconds(self) -> int:
         ''' Gets the max runtime in seconds for an execution '''
         # 31556952 is one year.
-        return self.config.get_executor_config().max_process_runtime_seconds or 31556952
+        secs = self.config.get_executor_config().max_process_runtime_seconds
+        if secs is None:
+            secs = 31556952
+        return secs
+
+    def get_execution_directory(self) -> typing.Optional[pathlib.Path]:
+        ''' Gets the execution directory from the config. If there is a path given, ensure it exists '''
+        p = self.config.get_executor_config().execution_directory or None
+        if p:
+            p = pathlib.Path(p)
+            os.makedirs(p, exist_ok=True)
+
+        return p
 
     def get_pathext(self) -> typing.List[str]:
         ''' Gets a list of extensions that 'we can run directly via the shell' '''
-        pathext = os.environ['PATHEXT'].split(os.pathsep)
-        for i in self.config.get_executor_config().get('extensions_to_remove_from_pathext', []):
-            if i in pathext:
-                pathext.remove(i)
-        return pathext
+        pathext = os.environ['PATHEXT'].lower().split(os.pathsep)
+        ext_to_remove = [a.lower() for a in self.config.get_executor_config().get('extensions_to_remove_from_pathext', [])]
+        return [p for p in pathext if p not in ext_to_remove]
 
     def _log_process_stdout(self, process: subprocess.Popen):
         ''' Should be run in a thread to continually read output and send it to a logger. '''
         for stdout_line in process.stdout:
             stdout_line = stdout_line.decode().rstrip('\n').rstrip('\r')
-            if stdout_line:
-                self.logger.info(f">> {stdout_line}")
+            self.logger.info(f"{PROCESS_LOG_LINE_PREFIX}{stdout_line}")
 
-    def run_subprocess_output_to_logger(self, cmd: typing.Union[str, list]):
+    def run_subprocess_output_to_logger(self, cmd: typing.Union[str, list]) -> int:
         '''
         Runs the given command using subprocess, along with options in the AutoConfig.
         Output will be logged to the logger.
         '''
         self.logger.info(f"Executing: {cmd}...")
 
-        max_runtime = self.get_process_max_runtime()
+        max_runtime = self.get_process_max_runtime_seconds()
         self.logger.debug(f".. With a max runtime of: {max_runtime} seconds.")
         death_time = max_runtime + time.time()
         self.logger.debug(f".. Process death time is: {datetime.datetime.fromtimestamp(death_time)}")
 
-        process = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+        process = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, cwd=self.get_execution_directory())
         self.logger.debug(f"Process pid: {process.pid}")
 
         # start a temp thread to keep track read the command output and
@@ -95,30 +106,31 @@ class Executor:
         log_thread.join()
 
         self.logger.info(f".. Exit Code: {exit_code}")
+        return exit_code
 
-    def execute(self):
+    def execute(self) -> int:
         '''
         Executes this Executor.
 
         Will attempt to figure out the best way to do that then ultimately
         perform a subprocess execution and waiting for it to complete
         '''
-        extension = self.run_path.suffix.lstrip('.')
+        extension = self.run_path.suffix.lstrip('.').lower()
         pathext = self.get_pathext()
         with tempenv.TemporaryEnvironment({'PATHEXT' : os.pathsep.join(pathext)}):
-            if extension in pathext:
+            if f'.{extension}' in pathext:
                 # should be able to run directly from command line
                 self.logger.debug("About to do a PATHEX-based execution")
-                self.run_subprocess_output_to_logger(str(self.run_path))
+                cmd = [str(self.run_path)]
             elif extension in ('py', 'pyc'):
                 # Run a python script with the running python
                 self.logger.debug("About to do a Python-based execution")
-                self.run_subprocess_output_to_logger([sys.executable, str(self.run_path)])
+                cmd = [sys.executable, str(self.run_path)]
             else:
                 # Attempt to read/use the shebang line
                 self.logger.debug("About to do a Shebang-based execution")
                 with open(self.run_path, 'r') as file:
                     shebang = parseshebang.parse(file)
-                self.run_subprocess_output_to_logger(shebang + [str(self.run_path)])
+                cmd = shebang + [str(self.run_path)]
 
-# todo... this module needs unit tests.
+            return self.run_subprocess_output_to_logger(cmd)
