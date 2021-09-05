@@ -6,7 +6,6 @@ import os
 import parseshebang
 import pathlib
 import shutil
-import stat
 import subprocess
 import sys
 import tempenv
@@ -38,7 +37,7 @@ class Executor:
         if not self.run_path.is_file():
             which_path = shutil.which(str(self.run_path))
             if not which_path:
-                raise FileNotFoundError(f'{self.run_path} does not exist (and is not in PATH)')
+                raise FileNotFoundError(f'{self.run_path} does not exist (and is not in PATH: {os.environ["PATH"]})')
             else:
                 self.run_path = pathlib.Path(which_path)
 
