@@ -46,7 +46,8 @@ def test_init_run_path_allows_something_in_path(executor):
 
     # put our tmp_XXX...py in PATH
     with tempenv.TemporaryEnvironment({
-        'PATH' : str(executor.run_path.parent)
+        'PATH' : str(executor.run_path.parent),
+        'PATHEXT' : ''
     }):
         executor.__init__(executor.config, pathlib.Path(executor.run_path.name))
 
