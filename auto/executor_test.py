@@ -3,6 +3,7 @@ import io
 import os
 import pathlib
 import pytest
+import stat
 import sys
 import tempenv
 import uuid
@@ -16,6 +17,7 @@ def py_file(tmpdir):
     p = pathlib.Path(tmpdir)
     f = p / f'tmp_{str(uuid.uuid4())}.py'
     f.write_text('print("hello")')
+    f.chmod(f.stat().st_mode | stat.S_IXUSR)
     yield f.resolve()
 
 @pytest.fixture(scope='function')

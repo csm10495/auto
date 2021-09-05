@@ -6,6 +6,7 @@ import os
 import parseshebang
 import pathlib
 import shutil
+import stat
 import subprocess
 import sys
 import tempenv

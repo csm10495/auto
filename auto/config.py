@@ -22,6 +22,8 @@ class ConfigValueTypeIncorrectError(ConfigVerificationError):
     ''' A value exists but is not the expected type '''
     pass
 
+class NoDefault:
+    pass
 
 class AutoConfig:
     ''' Config wrapper for auto '''
@@ -42,15 +44,19 @@ class AutoConfig:
             self.verify_config()
 
     @classmethod
-    def _is_key_in_config_dict(cls, key: str, typ: typing.Union[typing.Type, tuple], config: dict):
+    def _is_key_in_config_dict(cls, key: str, typ: typing.Union[typing.Type, tuple], config: dict, default=NoDefault):
         '''
         Helper method that will raise if a key isn't in the dict or if the key's value isn't of
         the given type.
 
-        # Todo: Make it so this function can add a config if a default value is given (and key is missing)
+        If default is passed in, and the key is not present, the value will be set to the default
+        for the given key.
         '''
         if key not in config:
-            raise ConfigKeyMissingError(f"{key} is missing from config: {config}")
+            if default == NoDefault:
+                raise ConfigKeyMissingError(f"{key} is missing from config: {config}")
+            else:
+                config[key] = default
 
         value = config[key]
         if not isinstance(value, typ):
